@@ -114,7 +114,7 @@ discoverLetBindings guide inp =
         (lbvdefs, subsInp) = substLBRefs guide lbn annotInp
     in SCons letPart $ SCons lbvdefs (SCons subsInp SNil)
 
-{- $ intro
+{- $intro
 
 This module allows let bindings to be introduced into the S-Expression
 syntax.
