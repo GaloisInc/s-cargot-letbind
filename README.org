@@ -11,11 +11,11 @@ For example, instead of:
 this can be re-written with let bindings:
 
 #+BEGIN_SRC lisp
->    (let ((wy    (width y))
->          (wboth (+ (width x) wy))
->          (wide  (if (enabled x) wboth wy))
->         )
->      (concat wide " meters"))
+    (let ((wy    (width y))
+          (wboth (+ (width x) wy))
+          (wide  (if (enabled x) wboth wy))
+         )
+      (concat wide " meters"))
 #+END_SRC
 
 As S-expressions grow larger, let-binding can help readability for
@@ -25,7 +25,7 @@ let-bound variables, and the inverse function 'letExpand' which will
 expand let-bound variables back into the expression.
 
 #+BEGIN_SRC haskell
->    id = letExpand . discoverLetBindings guide
+    id = letExpand . discoverLetBindings guide
 #+END_SRC
 
 The typical use is to add let bindings before serializing to
