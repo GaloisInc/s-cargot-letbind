@@ -1,0 +1,36 @@
+This module allows let bindings to be introduced into the S-Expression
+syntax.
+
+For example, instead of:
+
+#+BEGIN_SRC lisp
+     (concat (if (enabled x) (+ (width x) (width y)) (width y))
+             " meters")
+#+END_SRC
+
+this can be re-written with let bindings:
+
+#+BEGIN_SRC lisp
+>    (let ((wy    (width y))
+>          (wboth (+ (width x) wy))
+>          (wide  (if (enabled x) wboth wy))
+>         )
+>      (concat wide " meters"))
+#+END_SRC
+
+As S-expressions grow larger, let-binding can help readability for
+those expressions.  This module provides the 'discoverLetBindings'
+function that will convert an S-expression into one containing
+let-bound variables, and the inverse function 'letExpand' which will
+expand let-bound variables back into the expression.
+
+#+BEGIN_SRC haskell
+>    id = letExpand . discoverLetBindings guide
+#+END_SRC
+
+The typical use is to add let bindings before serializing to
+disk, and then expand the bindings after reading from the disk but
+before passing to other processing; this process allows the
+application using the S-Expressions to be unaware of the let-binding
+compression, although it does not obtain corresponding advantages of
+the re-use of let-bound variables.
