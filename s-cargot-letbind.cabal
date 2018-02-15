@@ -1,6 +1,30 @@
 name:                s-cargot-letbind
 version:             0.1.0.0
 synopsis:            Enables let-binding and let-expansion for s-cargot defined S-expressions.
+description:
+
+   This module allows let bindings to be introduced into the S-Expression
+   syntax.
+   .
+   For example, instead of:
+   .
+   >    (concat (if (enabled x) (+ (width x) (width y)) (width y))
+   >            " meters")
+   .
+   this can be re-written with let bindings:
+   .
+   >    (let ((wy    (width y))
+   >          (wboth (+ (width x) wy))
+   >          (wide  (if (enabled x) wboth wy))
+   >         )
+   >      (concat wide " meters"))
+   .
+   As S-expressions grow larger, let-binding can help readability for
+   those expressions.  This module provides the 'discoverLetBindings'
+   function that will convert an S-expression into one containing
+   let-bound variables, and the inverse function 'letExpand' which will
+   expand let-bound variables back into the expression.
+
 homepage:            https://github.com/GaloisInc/s-cargot-letbind
 license:             ISC
 license-file:        LICENSE
