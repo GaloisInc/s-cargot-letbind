@@ -9,7 +9,7 @@ maintainer:          kquick@galois.com
 copyright:           2018 Kevin Quick
 category:            Data
 build-type:          Simple
-extra-source-files:  ChangeLog.org
+extra-source-files:  ChangeLog.md
                      test/big-sample.sexp
                      test/small-sample.sexp
                      test/med-sample.sexp
