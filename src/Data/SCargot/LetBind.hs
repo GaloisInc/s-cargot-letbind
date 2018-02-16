@@ -20,7 +20,7 @@ module Data.SCargot.LetBind
 import           Control.Applicative
 import qualified Data.Foldable as F
 import           Data.Function (on)
-import           Data.List (sortBy)
+import           Data.List ( sortBy, intercalate )
 import           Data.Maybe
 import           Data.Monoid
 import           Data.SCargot.Repr
@@ -117,7 +117,6 @@ discoverLetBindings :: (Monoid str, IsString str, Eq str, Eq a, Show a) =>
                         DiscoveryGuide a str -> SExpr a -> SExpr a
 discoverLetBindings guide inp =
     let (inpMap,annotInp) = explore guide startingLoc inp
-                    -- KWQ: locs rec v.s. let selections?
         locs = bestBindings guide annotInp $ points inpMap
         lbn = assignLBNames guide inp locs
         varNameCollisions = verifyNamesUnique guide lbn inp
