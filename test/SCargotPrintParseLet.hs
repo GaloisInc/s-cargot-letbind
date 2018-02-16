@@ -85,8 +85,32 @@ main = do
                                                 SNil)))
                 ]
               ]
-            , TestLabel "round-trip" $ TestList $
-              concatMap (\t -> map t srcs) $
+
+            , TestLabel "let bind corner cases" $
+              let pprintIt = pprintSExpr 40 Swing
+                  guide = (nativeGuide AIdent (\n _ -> AIdent n))
+                          { extractStr = Just . T.unpack . printAtom
+                          }
+                  sexpr f = (SCons (SCons (SAtom (AIdent "hi"))
+                                          (SCons (SAtom (AIdent "world"))
+                                                 (SCons (SAtom (AIdent "and"))
+                                                        (SCons f
+                                                               SNil))))
+                                   (SCons (SAtom (AIdent "hallo"))
+                                          (SCons (SAtom (AIdent "welt"))
+                                                 (SCons (SAtom (AIdent "und"))
+                                                        (SCons (SAtom (AIdent "leute"))
+                                                               SNil)))))
+                  normalf = (SAtom (AIdent "people"))
+              in TestList
+              [ TestLabel "trivial let binding" $
+                "((hi world and people)\n hallo\n welt\n und\n leute)\n" ~=?
+                (pprintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
+              ]
+
+            , TestLabel "round-trip" $
+              let pprintIt = pprintSExpr 40 Swing in TestList $
+              concatMap (\t -> map t srcs)
               [ testParsePrint
               ]
             ]

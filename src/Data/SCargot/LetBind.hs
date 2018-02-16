@@ -112,7 +112,9 @@ discoverLetBindings guide inp =
         lbn = assignLBNames guide inp locs
         letPart = SAtom $ letMaker guide "let"
         (lbvdefs, subsInp) = substLBRefs guide lbn annotInp
-    in SCons letPart $ SCons lbvdefs (SCons subsInp SNil)
+    in if null lbn
+       then inp
+       else SCons letPart $ SCons lbvdefs (SCons subsInp SNil)
 
 {- $intro
 
