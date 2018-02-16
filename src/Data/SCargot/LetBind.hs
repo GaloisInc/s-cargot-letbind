@@ -64,6 +64,15 @@ data DiscoveryGuide a str = Guide
       -- referenced.  The return will be placed in an SAtom and used
       -- as the variable to reference the bound sub-expression.
 
+    , extractStr :: (IsString str) => a -> Maybe str
+    -- ^ Called to extract a string value.  The returned string should
+    -- be the string that will be written when the enclosing
+    -- S-expression is printed.  This is used to verify that the
+    -- variables names extracted for let-binding are unique with
+    -- respect to all other printed references.  A return value of
+    -- Nothing permits continuation without uniqueness verification,
+    -- but at the risk that variable names will be captured in the
+    -- result.
     }
 
 
@@ -75,6 +84,7 @@ nativeGuide letMk labelMk = Guide { maxLetBinds = const 8
                                   , weighting = defaultWeighting
                                   , letMaker = letMk
                                   , labelMaker = labelMk
+                                  , extractStr = const Nothing
                                   }
 
 
@@ -103,18 +113,21 @@ defaultWeighting subexpr cnt =
 -- | Called to convert a plain S-expression into one with let-bound
 -- variables.  The let bindings are "discovered" with the assistance
 -- of the guide.
-discoverLetBindings :: (Monoid str, IsString str, Eq a) =>
+discoverLetBindings :: (Monoid str, IsString str, Eq str, Eq a, Show a) =>
                         DiscoveryGuide a str -> SExpr a -> SExpr a
 discoverLetBindings guide inp =
     let (inpMap,annotInp) = explore guide startingLoc inp
                     -- KWQ: locs rec v.s. let selections?
         locs = bestBindings guide annotInp $ points inpMap
         lbn = assignLBNames guide inp locs
+        varNameCollisions = verifyNamesUnique guide lbn inp
         letPart = SAtom $ letMaker guide "let"
         (lbvdefs, subsInp) = substLBRefs guide lbn annotInp
-    in if null lbn
-       then inp
-       else SCons letPart $ SCons lbvdefs (SCons subsInp SNil)
+    in if null varNameCollisions
+       then if null lbn
+            then inp
+            else SCons letPart $ SCons lbvdefs (SCons subsInp SNil)
+       else error $ verificationFailureReport locs varNameCollisions
 
 {- $intro
 
@@ -283,6 +296,71 @@ assignLBNames guide inp = snd . mapAccumL mkNamedLoc (1::Int, 0::Int)
                                               then mkNamedLoc (i+1,t+1) l  -- collision, try another varname
                                               else error $ "Too many failed attempts \
                                                            \to generate a unique let var name: " <> show nm
+
+
+type UniquenessResult a = [(NamedLoc a, [Either (NamedLoc a) (SExpr a)])]
+
+verifyNamesUnique :: (IsString str, Eq str, Eq a) =>
+                     DiscoveryGuide a str
+                  -> [NamedLoc a]
+                  -> SExpr a
+                  -> UniquenessResult a
+verifyNamesUnique guide names sexpr =
+    foldr checkUniqueInExpr (checkUniqueNames names) names
+    where
+          varname (SAtom a) = atom2str a
+          varname _ = Nothing
+          atom2str = extractStr guide
+          checkUniqueInExpr nloc dups =
+              let locname = varname $ nlocVar nloc
+                  addDup [] otherexp = [(nloc, [Right otherexp])]
+                  addDup ((l,dl):dls) subexp = if nlocId l == nlocId nloc
+                                               then (nloc, Right subexp : dl) : dls
+                                               else addDup dls subexp
+                  matchExpHead s e@(SAtom a) = if Just s == atom2str a
+                                               then Just e
+                                               else Nothing
+                  matchExpHead s e@(SCons (SAtom a) r) = if Just s == atom2str a
+                                                         then Just e
+                                                         else matchExpHead s r
+                  matchExpHead _ SNil = Nothing
+                  matchExpHead s (SCons l r) = matchExpHead s l <|> matchExpHead s r
+              in case locname of
+                   Nothing -> dups
+                   Just nstr -> maybe dups (addDup dups) $ matchExpHead nstr sexpr
+
+          checkUniqueNames = fmap (fmap (fmap Left)) . snd
+                             . splitDups . foldr combineDups []
+          combineDups nloc [] = [(nloc, [])]
+          combineDups nloc ((d,ls):ds) = if nlocVar nloc == nlocVar d
+                                         then (d,nloc:ls):ds
+                                         else (d,ls) : combineDups nloc ds
+          splitDups = let isDup (nloc, []) (u,d) = (nloc:u, d)
+                          isDup e (u,d) = (u, e:d)
+                      in foldr isDup ([],[])
+
+
+verificationFailureReport :: Show a => [Location a] -> UniquenessResult a -> String
+verificationFailureReport locs = intercalate "\n" . fmap vfRep
+    where vfRep (l, vf) =
+              let fs = fmap fl vf
+                  fl (Left nloc) = var nloc
+                  fl (Right e) = "other portion of S-expression: "
+                                 <> (show $ truncateExpr 4 e)
+                  var v = "let variable \"" <> (show $ nlocVar v)
+                          <> "\" ["
+                          <> (show $ (truncateExpr 2 . locExpr) <$>
+                                   F.find ((==) (nlocId v) . locId) locs)
+                          <> " ...]"
+              in intercalate "\n    " $
+                     ("ERR: duplicated " <> (var l) <> " at: ") : fs
+
+truncateExpr :: Int -> SExpr a -> SExpr a
+truncateExpr _ SNil = SNil
+truncateExpr _ e@(SAtom _) = e
+truncateExpr 0 _ = SNil
+truncateExpr n (SCons l r) = let trunc = truncateExpr (n - 1)
+                             in SCons (trunc l) (trunc r)
 
 substLBRefs :: Eq a =>
                DiscoveryGuide a str -> [NamedLoc a] -> ExprInfo a

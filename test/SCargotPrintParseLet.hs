@@ -3,7 +3,9 @@
 
 module Main where
 
+import           Control.Exception
 import           Data.Either
+import           Data.List
 import           Data.SCargot
 import           Data.SCargot.Comments
 import           Data.SCargot.LetBind
@@ -91,6 +93,37 @@ main = do
                   guide = (nativeGuide AIdent (\n _ -> AIdent n))
                           { extractStr = Just . T.unpack . printAtom
                           }
+                  samenames = guide
+                              { labelMaker = \_ _ -> AIdent "samevar"
+                              , minExprSize = 2
+                              }
+                  peoplenames = guide
+                                { labelMaker = \s e -> AIdent
+                                               $ case e of
+                                                   (SCons (SAtom (AIdent "welt")) _) -> "people"
+                                                   _ -> s
+                                , minExprSize = 2
+                                , weighting = \e c ->
+                                              case e of
+                                                   (SCons (SAtom (AIdent "welt")) _) -> 1000000
+                                                   _ -> weighting guide e c
+                                }
+                  hinames = peoplenames
+                                { labelMaker = \s e -> AIdent
+                                               $ case e of
+                                                   (SCons (SAtom (AIdent "welt")) _) -> "hi"
+                                                   _ -> s
+                                }
+                  nobindGuide = guide { weighting = \_ _ -> 0 }
+                  throws t estrs = catch (evaluate t >> pure False) $
+                                   \(ErrorCall e) -> (mapM (assertInString e) estrs >> pure True)
+                                   -- \(ErrorCall e) -> assertInString estrs e
+                                   -- \(ErrorCall e) -> mapM (assertBool "chk" . isInfixOf e) estrs
+                                   -- \(ErrorCall e) -> pure $ and $ fmap (assertBool "chk" . isInfixOf e) estrs
+                  assertInString whole part = assertBool ("String \"" <> part <> "\" not in \"" <> whole <> "\"") $
+                                              part `isInfixOf` whole
+                  checkStrs :: [String] -> String -> IO Bool
+                  checkStrs estrs e = mapM (assertBool "chk" . isInfixOf e) estrs >> pure True
                   sexpr f = (SCons (SCons (SAtom (AIdent "hi"))
                                           (SCons (SAtom (AIdent "world"))
                                                  (SCons (SAtom (AIdent "and"))
@@ -106,6 +139,46 @@ main = do
               [ TestLabel "trivial let binding" $
                 "((hi world and people)\n hallo\n welt\n und\n leute)\n" ~=?
                 (pprintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
+
+              , TestLabel "duplicate names" $
+                TestCase (assertBool "No error on duplicate bindings" =<<
+                          throws (pprintIt $ discoverLetBindings samenames $ sexpr normalf)
+                         [ "duplicated let variable"
+                         , "people"
+                         , "   let variable"
+                         ])
+
+              , TestLabel "expected bindings for these tests" $
+                              "(let\n\
+                              \ ((people (welt und leute))\n\
+                              \  (var1 (world and last)))\n\
+                              \ ((hi var1) hallo people))\n" ~=?
+                              (pprintIt $ discoverLetBindings peoplenames
+                                            $ sexpr (SAtom (AIdent "last")))
+              , TestLabel "expression ident names collision above bind point" $
+                TestCase (assertBool "No expected error on duplicate bindings" =<<
+                          throws (pprintIt $ discoverLetBindings hinames
+                                           $ sexpr normalf)
+                          [ "Too many failed attempts"
+                          , "unique let var name"
+                          , "hi"
+                          ])
+              , TestLabel "expression ident names collision below bind point" $
+                TestCase (assertBool "No expected error on duplicate bindings" =<<
+                          throws (pprintIt $ discoverLetBindings peoplenames
+                                           $ sexpr normalf)
+                          [ "Too many failed attempts"
+                          , "unique let var name"
+                          , "people"
+                          ])
+              , TestLabel "expression string-only collision names" $
+                TestCase (assertBool "No expected error on duplicate bindings" =<<
+                          throws (pprintIt $ discoverLetBindings peoplenames
+                                           $ sexpr (SAtom (AMarker "people")))
+                          [ "duplicated let variable"
+                          , "people"
+                          , "other portion of S-expression"
+                          ])
               ]
 
             , TestLabel "round-trip" $
@@ -192,6 +265,8 @@ data FAtom = AIdent String
            | AQuoted String
            | AString String
            | AInt Integer
+           | AMarker String  -- ambiguous, but duplicates AIdent in
+                             -- output; used for collision tests
            | ABV Int Integer
            deriving (Eq, Show)
 
@@ -216,6 +291,7 @@ printAtom :: FAtom -> T.Text
 printAtom a =
   case a of
     AIdent s -> T.pack s
+    AMarker s -> T.pack s
     AQuoted s -> T.pack ('\'' : s)
     AString s -> T.pack (show s)
     AInt i -> T.pack (show i)
