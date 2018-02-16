@@ -268,17 +268,19 @@ findLocation loc = fndLoc
           fndLoc e@(EICons el l r) = if el == loc then Just e else fndLoc l <|> fndLoc r
 
 
-assignLBNames :: (Eq a, IsString str, Monoid str) =>
+assignLBNames :: (Show a, Eq a, IsString str, Monoid str) =>
                  DiscoveryGuide a str -> SExpr a -> [Location a] -> [NamedLoc a]
-assignLBNames guide inp = snd . mapAccumL mkNamedLoc (1::Int)
-    where mkNamedLoc i l = let nm = labelMaker guide suggestedName $ locExpr l
-                               suggestedName = "var" <> fromString (show i)
-                           in case F.find ((==) nm) inp of
-                                Nothing -> (i+1, NamedLoc { nlocId = locId l
-                                                          , nlocVar = SAtom nm
-                                                          })
-                                Just _ -> mkNamedLoc (i+1) l  -- collision, try another varname
-
+assignLBNames guide inp = snd . mapAccumL mkNamedLoc (1::Int, 0::Int)
+    where mkNamedLoc (i,t) l = let nm = labelMaker guide suggestedName $ locExpr l
+                                   suggestedName = "var" <> fromString (show i)
+                               in case F.find ((==) nm) inp of
+                                    Nothing -> ((i+1,0), NamedLoc { nlocId = locId l
+                                                                  , nlocVar = SAtom nm
+                                                                  })
+                                    Just _ -> if t < 100
+                                              then mkNamedLoc (i+1,t+1) l  -- collision, try another varname
+                                              else error $ "Too many failed attempts \
+                                                           \to generate a unique let var name: " <> show nm
 
 substLBRefs :: Eq a =>
                DiscoveryGuide a str -> [NamedLoc a] -> ExprInfo a
