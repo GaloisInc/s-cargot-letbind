@@ -89,6 +89,9 @@ main = do
 
             , TestLabel "let bind corner cases" $
               let pprintIt = pprintSExpr 40 Swing
+                  widePrintIt = encodeOne (setIndentStrategy (const Swing) $
+                                           setIndentAmount 1 $
+                                           unconstrainedPrint printAtom)
                   guide = (nativeGuide AIdent (\n _ -> AIdent n))
                           { extractStr = Just . T.unpack . printAtom
                           }
@@ -136,8 +139,11 @@ main = do
                   normalf = (SAtom (AIdent "people"))
               in TestList
               [ TestLabel "trivial let binding" $
-                "((hi world and\n people) hallo welt\nund\nleute)" ~=?
+                "((hi world and\npeople) hallo welt\nund\nleute)" ~=?
                 (pprintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
+              , TestLabel "trivial let binding (wide)" $
+                "((hi world and people)\n hallo\n welt\n und\n leute)" ~=?
+                (widePrintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
 
               , TestLabel "duplicate names" $
                 TestCase (assertBool "No error on duplicate bindings" =<<
@@ -154,6 +160,14 @@ main = do
                               \ ((hi var1) hallo people))" ~=?
                               (pprintIt $ discoverLetBindings peoplenames
                                             $ sexpr (SAtom (AIdent "last")))
+              , TestLabel "expected bindings for these tests" $
+                              "(let\n\
+                              \ ((people\n  (welt und leute))\n\
+                              \  (var1\n   (world and last)))\n\
+                              \ ((hi var1)\n  hallo\n  people))" ~=?
+                              (widePrintIt $ discoverLetBindings peoplenames
+                                            $ sexpr (SAtom (AIdent "last")))
+
               , TestLabel "expression ident names collision above bind point" $
                 TestCase (assertBool "No expected error on duplicate bindings" =<<
                           throws (pprintIt $ discoverLetBindings hinames
@@ -304,9 +318,7 @@ pprintSExpr :: Int -> Indent -> SExpr FAtom -> T.Text
 pprintSExpr w i = encodeOne (setIndentStrategy (const i) $
                              setMaxWidth w $
                              setIndentAmount 1 $
-                             -- basicPrint
-                             unconstrainedPrint
-                             printAtom)
+                             basicPrint printAtom)
 
 getIdent :: FAtom -> Maybe String
 getIdent (AIdent s) = Just s
