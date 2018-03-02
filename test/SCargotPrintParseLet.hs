@@ -39,12 +39,12 @@ main = do
                   printSExpr (SCons (SAtom (AIdent "hi"))
                                     (SCons (SAtom (AIdent "world"))
                                            SNil))
-                , TestLabel "flatprint list of 2 pairs" $ "((hi . hallo) (world . welt))" ~=?
+                , TestLabel "flatprint list of 2 pairs" $ "((hi . hallo) world . welt)" ~=?
                   printSExpr (SCons (SCons (SAtom (AIdent "hi"))
                                            (SAtom (AIdent "hallo")))
                                     (SCons (SAtom (AIdent "world"))
                                            (SAtom (AIdent "welt"))))
-                , TestLabel "flatprint list of 3 ending in a pair" $ "(hi world (hallo . welt))" ~=?
+                , TestLabel "flatprint list of 3 ending in a pair" $ "(hi world hallo . welt)" ~=?
                   printSExpr (SCons (SAtom (AIdent "hi"))
                                     (SCons (SAtom (AIdent "world"))
                                            (SCons (SAtom (AIdent "hallo"))
@@ -57,29 +57,29 @@ main = do
                 ]
               , TestLabel "pretty print" $
                 let pprintIt = pprintSExpr 40 Swing in TestList
-                [ TestLabel "pretty print SNil" $ "()\n" ~=? pprintIt SNil
-                , TestLabel "pretty print SAtom" $ "hi\n" ~=? pprintIt (SAtom (AIdent "hi"))
-                , TestLabel "pretty print pair" $ "(hi . world)\n" ~=?
+                [ TestLabel "pretty print SNil" $ "()" ~=? pprintIt SNil
+                , TestLabel "pretty print SAtom" $ "hi" ~=? pprintIt (SAtom (AIdent "hi"))
+                , TestLabel "pretty print pair" $ "(hi . world)" ~=?
                   pprintIt (SCons (SAtom (AIdent "hi")) (SAtom (AIdent "world")))
-                , TestLabel "pretty print list of 1" $ "(hi)\n" ~=?
+                , TestLabel "pretty print list of 1" $ "(hi)" ~=?
                   pprintIt (SCons (SAtom (AIdent "hi")) SNil)
-                , TestLabel "pretty print list of 2" $ "(hi world)\n" ~=?
+                , TestLabel "pretty print list of 2" $ "(hi world)" ~=?
                   pprintIt (SCons (SAtom (AIdent "hi"))
                                   (SCons (SAtom (AIdent "world"))
                                          SNil))
                 , TestLabel "pretty print list of 2 pairs" $
-                  "((hi . hallo) (world . welt))\n" ~=?
+                  "((hi . hallo) world . welt)" ~=?
                   pprintIt (SCons (SCons (SAtom (AIdent "hi"))
                                          (SAtom (AIdent "hallo")))
                                   (SCons (SAtom (AIdent "world"))
                                          (SAtom (AIdent "welt"))))
                 , TestLabel "pretty print list of 3 ending in a pair" $
-                  "(hi world (hallo . welt))\n" ~=?
+                  "(hi world hallo . welt)" ~=?
                   pprintIt (SCons (SAtom (AIdent "hi"))
                                   (SCons (SAtom (AIdent "world"))
                                          (SCons (SAtom (AIdent "hallo"))
                                                 (SAtom (AIdent "welt")))))
-                , TestLabel "pretty print list of 3" $ "(hi world hallo)\n" ~=?
+                , TestLabel "pretty print list of 3" $ "(hi world hallo)" ~=?
                   pprintIt (SCons (SAtom (AIdent "hi"))
                                   (SCons (SAtom (AIdent "world"))
                                          (SCons (SAtom (AIdent "hallo"))
@@ -136,7 +136,7 @@ main = do
                   normalf = (SAtom (AIdent "people"))
               in TestList
               [ TestLabel "trivial let binding" $
-                "((hi world and people)\n hallo\n welt\n und\n leute)\n" ~=?
+                "((hi world and\n people) hallo welt\nund\nleute)" ~=?
                 (pprintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
 
               , TestLabel "duplicate names" $
@@ -148,10 +148,10 @@ main = do
                          ])
 
               , TestLabel "expected bindings for these tests" $
-                              "(let\n\
-                              \ ((people (welt und leute))\n\
+                              "(let \n\
+                              \ ((people (welt und leute)) \n\
                               \  (var1 (world and last)))\n\
-                              \ ((hi var1) hallo people))\n" ~=?
+                              \ ((hi var1) hallo people))" ~=?
                               (pprintIt $ discoverLetBindings peoplenames
                                             $ sexpr (SAtom (AIdent "last")))
               , TestLabel "expression ident names collision above bind point" $
@@ -304,7 +304,9 @@ pprintSExpr :: Int -> Indent -> SExpr FAtom -> T.Text
 pprintSExpr w i = encodeOne (setIndentStrategy (const i) $
                              setMaxWidth w $
                              setIndentAmount 1 $
-                             basicPrint printAtom)
+                             -- basicPrint
+                             unconstrainedPrint
+                             printAtom)
 
 getIdent :: FAtom -> Maybe String
 getIdent (AIdent s) = Just s
