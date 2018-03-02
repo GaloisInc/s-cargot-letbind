@@ -1,9 +1,17 @@
 # Revision history for s-cargot-letbind
 
+## 0.2.2.0  -- 2018-03-02
+
+   * Updated to use s-cargot release 0.1.4.0.
+
+     More performance fixes in s-cargot for `basicPrint`, and using
+     `unconstrainedPrint` without a width specification (because a
+     width specification devolves into `basicPrint` anyhow).
+
 ## 0.2.1.0  -- 2018-03-02
 
    * Updated to use s-cargot release 0.1.3.0 and the
-     `unconstrainedOutput` added in that version for increased
+     `unconstrainedPrint` added in that version for increased
      performance.
 
 ## 0.2.0.0  -- 2018-02-16
