@@ -172,8 +172,9 @@ The 'weighting' function of the 'DiscoveryGuide' can be used to assign
 weights to various S-expression phrases: the S-expressions with the
 highest weights will be let-bound to variables (up to the
 'maxLetBinds' limit).  A weighting value of 0 will cause the
-sub-expression to be ignored (never let-bound) and a value of >=
-1000000 will *always* insert a let-binding, ignoring all other limits.
+sub-expression to be ignored (never let-bound) and a value equal to or
+greater than 1000000 will *always* insert a let-binding, ignoring all
+other limits.
 
 -}
 
