@@ -46,7 +46,8 @@ source-repository head
 
 library
   exposed-modules:     Data.SCargot.LetBind
-  build-depends:       base      >=4.10 && <4.11
+  -- Supports GHC 8.0.2 (base 4.9) through GHC 8.2 (base 4.10)
+  build-depends:       base      >=4.9 && <4.11
                      , s-cargot  >= 0.1.4.0 && <0.2
                      , text      >=1.2 && <2
   hs-source-dirs:      src
@@ -58,7 +59,7 @@ test-suite s-cargot-printparselet
   type:             exitcode-stdio-1.0
   hs-source-dirs:   test
   main-is:          SCargotPrintParseLet.hs
-  build-depends:    base      >=4.7 && <5
+  build-depends:    base      >=4.9 && <5
                   , parsec    >=3.1 && <4
                   , HUnit     >=1.6 && <1.7
                   , s-cargot  >= 0.1.4.0 && <0.2
