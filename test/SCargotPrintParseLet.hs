@@ -29,7 +29,7 @@ main = do
   counts <- runTestTT $ TestList
             [ TestLabel "basic checks" $ TestList
               [ TestLabel "flat print" $ TestList
-                [ TestLabel "flatprint SNil" $ "()" ~=? printSExpr SNil
+                [ TestLabel "flatprint SNil" $ "(broken)" ~=? printSExpr SNil
                 , TestLabel "flatprint SAtom" $ "hi" ~=? printSExpr (SAtom (AIdent "hi"))
                 , TestLabel "flatprint pair" $ "(hi . world)" ~=?
                   printSExpr (SCons (SAtom (AIdent "hi")) (SAtom (AIdent "world")))
