@@ -46,8 +46,7 @@ source-repository head
 
 library
   exposed-modules:     Data.SCargot.LetBind
-  -- Supports GHC 8.0.2 (base 4.9) through GHC 8.2 (base 4.10)
-  build-depends:       base      >=4.9 && <4.11
+  build-depends:       base      >=4.9 && <5
                      , s-cargot  >= 0.1.4.0 && <0.2
                      , text      >=1.2 && <2
   hs-source-dirs:      src
