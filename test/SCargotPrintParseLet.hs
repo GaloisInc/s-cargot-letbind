@@ -139,10 +139,10 @@ main = do
                   normalf = (SAtom (AIdent "people"))
               in TestList
               [ TestLabel "trivial let binding" $
-                "((hi world and\npeople) hallo welt\nund\nleute)" ~=?
+                "((hi world and people)\n  hallo\n  welt\n  und\n  leute)" ~=?
                 (pprintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
               , TestLabel "trivial let binding (wide)" $
-                "((hi world and people)\n hallo\n welt\n und\n leute)" ~=?
+                "((hi world and people)\n  hallo\n  welt\n  und\n  leute)" ~=?
                 (widePrintIt $ discoverLetBindings nobindGuide $ sexpr normalf)
 
               , TestLabel "duplicate names" $
@@ -154,17 +154,17 @@ main = do
                          ])
 
               , TestLabel "expected bindings for these tests" $
-                              "(let \n\
-                              \ ((people (welt und leute)) \n\
-                              \  (var1 (world and last)))\n\
-                              \ ((hi var1) hallo people))" ~=?
+                              "(let\n\
+                              \  ((people (welt und leute))\n\
+                              \    (var1 (world and last)))\n\
+                              \  ((hi var1) hallo people))" ~=?
                               (pprintIt $ discoverLetBindings peoplenames
                                             $ sexpr (SAtom (AIdent "last")))
               , TestLabel "expected bindings for these tests" $
                               "(let\n\
-                              \ ((people\n  (welt und leute))\n\
-                              \  (var1\n   (world and last)))\n\
-                              \ ((hi var1)\n  hallo\n  people))" ~=?
+                              \  ((people\n    (welt und leute))\n\
+                              \    (var1\n      (world and last)))\n\
+                              \  ((hi var1)\n    hallo\n    people))" ~=?
                               (widePrintIt $ discoverLetBindings peoplenames
                                             $ sexpr (SAtom (AIdent "last")))
 
