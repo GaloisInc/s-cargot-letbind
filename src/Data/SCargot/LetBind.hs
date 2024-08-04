@@ -21,6 +21,7 @@ import           Control.Applicative
 import qualified Data.Foldable as F
 import           Data.Function (on)
 import           Data.List ( sortBy, intercalate )
+import qualified Data.List.NonEmpty as NE
 import           Data.Maybe
 import           Data.Monoid
 import           Data.SCargot.Repr
@@ -183,14 +184,15 @@ alwaysBindWeight = 1000000
 
 bestBindings :: DiscoveryGuide a str -> ExprInfo a -> [Location a] -> [Location a]
 bestBindings guide exprs locs = getMaxBest
-    where getMaxBest = head $
+    where getMaxBest = NE.head $
                        -- Sometimes a lengthy binding "swallows"
                        -- everything else; skipping over it would
                        -- result in more available bindings.  Try the
                        -- first 3 combinations and take the one
                        -- yielding the most bindings.
-                       sortBy (compare `on` length) $
-                       fmap getBestSkipping [0..2]
+                       NE.sortBy (compare `on` length) $
+                       fmap getBestSkipping $
+                       0 NE.:| [1, 2]
           getBestSkipping n = snd $ snd $  -- extract list of Locations
                               -- determine top-set of best bindings to apply
                               foldl bestB (n, (maxbinds, [])) $
