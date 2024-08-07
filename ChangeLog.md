@@ -1,5 +1,9 @@
 # Revision history for s-cargot-letbind
 
+## next  -- TBA
+
+  * Relax upper bounds to allowing building with GHC 9.8.
+
 ## 0.2.4.0  -- 2023-04-03
 
   * Remove upper bound on text (builtin to GHC)
