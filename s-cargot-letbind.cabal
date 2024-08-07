@@ -1,5 +1,5 @@
 name:                s-cargot-letbind
-version:             0.2.4.0
+version:             0.2.5.0
 synopsis:            Enables let-binding and let-expansion for s-cargot defined S-expressions.
 description:
 

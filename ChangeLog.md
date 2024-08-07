@@ -1,6 +1,6 @@
 # Revision history for s-cargot-letbind
 
-## next  -- TBA
+## 0.2.5.0  -- 2024-08-07
 
   * Relax upper bounds to allowing building with GHC 9.8.
 
